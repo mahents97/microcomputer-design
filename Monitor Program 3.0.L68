@@ -1,0 +1,1097 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 4/29/2020 3:33:25 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : Monitor Program 3.0
+00000000                             3  * Written by : Mahents Ravelomanantsoa
+00000000                             4  * Date       : 04/19/2020
+00000000                             5  * Description: Monitor program for Microcomputer Design
+00000000                             6  *-----------------------------------------------------------
+00001000                             7      ORG    $1000    * cannot start at $0000 because Stack starts at $0000
+00001000                             8  START:                  ; first instruction of program
+00001000                             9  
+00001000                            10  * Put program code here
+00001000  48E7 C040                 11              MOVEM.L D0-D1/A1,-(SP)
+00001004                            12          
+00001004  223C 0000FF00             13              MOVE.L  #GREEN,D1
+0000100A  103C 0015                 14              MOVE.B  #21,D0
+0000100E  4E4F                      15              TRAP    #15
+00001010                            16  
+00001010  43F9 00001A5A             17              LEA     WELCOME,A1
+00001016  103C 000E                 18              MOVE.B  #14,D0
+0000101A  4E4F                      19              TRAP    #15 
+0000101C                            20  
+0000101C  223C 00FFFFFF             21              MOVE.L  #WHITE,D1
+00001022  103C 0015                 22              MOVE.B  #21,D0
+00001026  4E4F                      23              TRAP    #15
+00001028                            24              
+00001028  4CDF 0203                 25              MOVEM.L (SP)+,D0-D1/A1
+0000102C                            26  
+0000102C                            27  *Subroutine for main display menu
+0000102C                            28  *The different options are: 1. Read from memory
+0000102C                            29  *                           2. Write to memory
+0000102C                            30  *                           3. Read from registers
+0000102C                            31  *                           4. Write to registers
+0000102C                            32  *                           5. Load an S-record
+0000102C                            33  *                           6. Run an S-record
+0000102C  2F00                      34  MAIN_MENU   MOVE.L  D0,-(SP)
+0000102E  2F09                      35              MOVE.L  A1,-(SP)
+00001030  43F9 00001B87             36              LEA     MENU,A1 * loads the address for the MENU prompt into A1 for display
+00001036  103C 000E                 37              MOVE.B  #14,D0 * task 14: Display the NULL terminated string at (A1) without CR, LF.
+0000103A  4E4F                      38              TRAP    #15 * simulator I/O
+0000103C  225F                      39              MOVE.L  (SP)+,A1 *MOVE.L  #$0,A1
+0000103E  201F                      40              MOVE.L  (SP)+,D0 *CLR.L   D0
+00001040                            41              
+00001040  2F01                      42              MOVE.L  D1,-(SP)
+00001042  2F00                      43              MOVE.L  D0,-(SP)
+00001044  103C 0004                 44              MOVE.B  #4,D0 * task 4: Read a number from the keyboard into D1
+00001048  4E4F                      45              TRAP    #15 * simulator I/O
+0000104A  201F                      46              MOVE.L  (SP)+,D0 *CLR.L   D0
+0000104C  B27C 0001                 47              CMP     #1,D1 * if D1 (input) is 1,
+00001050  6700 0032                 48              BEQ     READMEM * go to READMEM: read from memory
+00001054  B27C 0002                 49              CMP     #2,D1 * if D1 is 2,
+00001058  6700 0066                 50              BEQ     WRITEMEM * go to WRITEMEM: write to memory
+0000105C  B27C 0003                 51              CMP     #3,D1 * if D1 is 3,
+00001060  6700 0146                 52              BEQ     READREG * go to READREG: read from register
+00001064  B27C 0004                 53              CMP     #4,D1 * if D1 is 4,
+00001068  6700 016C                 54              BEQ     WRITEREG * go to WRITEREG: write to register
+0000106C  B27C 0005                 55              CMP     #5,D1 * if D1 is 5,
+00001070  6700 0314                 56              BEQ     LOADSREC * go to LOADSREC: load s-record
+00001074  B27C 0006                 57              CMP     #6,D1 * if D1 is 6,
+00001078  6700 0464                 58              BEQ     RUNSREC * go to RUNSREC: run s-record   
+0000107C  4EB9 00001542             59              JSR     INVALID_INPUT * if no match, display error message
+00001082  60A8                      60              BRA     MAIN_MENU * goes back to main menu
+00001084                            61  
+00001084                            62  * ---- OPTION 1: Subroutine to read from memory ---- *
+00001084  221F                      63  READMEM     MOVE.L  (SP)+,D1
+00001086  2F00                      64              MOVE.L  D0,-(SP)
+00001088  2F09                      65              MOVE.L  A1,-(SP)
+0000108A  43F9 00001CC9             66              LEA     OPTION1,A1 * loads prompt to ask input for memory address
+00001090  103C 000E                 67              MOVE.B  #14,D0
+00001094  4E4F                      68              TRAP    #15
+00001096  225F                      69              MOVE.L  (SP)+,A1 *MOVE.L  #$0,A1
+00001098  201F                      70              MOVE.L  (SP)+,D0 *CLR.L   D0
+0000109A  4EB9 00001558             71              JSR     GET_STRING
+000010A0  4EB9 00001580             72              JSR     ASCII_TO_HEX
+000010A6  4EB9 0000160E             73              JSR     GET_LONGWORD
+000010AC  23F9 00003100 00003104    74              MOVE.L  LONGWORD,ADDRESS
+000010B6  4EB9 00001752             75              JSR     DISPLAY_MEM
+000010BC  6000 FF6E                 76              BRA     MAIN_MENU           
+000010C0                            77  * -------------------------------------- *
+000010C0                            78  
+000010C0                            79  * ---- OPTION 2: Subroutine to write to memory ---- *
+000010C0  221F                      80  WRITEMEM    MOVE.L  (SP)+,D1            
+000010C2  2F00                      81              MOVE.L  D0,-(SP)
+000010C4  2F09                      82              MOVE.L  A1,-(SP)
+000010C6  43F9 00001D0C             83              LEA     OPTION2A,A1 * loads prompt to ask input for memory address
+000010CC  103C 000E                 84              MOVE.B  #14,D0
+000010D0  4E4F                      85              TRAP    #15
+000010D2  225F                      86              MOVE.L  (SP)+,A1 *MOVE.L  #$0,A1
+000010D4  201F                      87              MOVE.L  (SP)+,D0 *CLR.L   D0
+000010D6                            88              
+000010D6  4EB9 00001558             89              JSR     GET_STRING
+000010DC  4EB9 00001580             90              JSR     ASCII_TO_HEX
+000010E2  4EB9 0000160E             91              JSR     GET_LONGWORD
+000010E8                            92              
+000010E8  2F08                      93              MOVE.L  A0,-(SP)
+000010EA  2F09                      94              MOVE.L  A1,-(SP)
+000010EC  207C 0000FFFF             95              MOVE.L  #$0000FFFF,A0
+000010F2  2279 00003100             96              MOVE.L  LONGWORD,A1         
+000010F8  B3C8                      97              CMP.L   A0,A1
+000010FA  6300 0094                 98              BLS     MEM_ERROR * Cannot write to ROM // (also, for an unsigned number use BLS instead of BLT)
+000010FE  225F                      99              MOVE.L  (SP)+,A1
+00001100  205F                     100              MOVE.L  (SP)+,A0
+00001102                           101              
+00001102  23F9 00003100 00003104   102              MOVE.L  LONGWORD,ADDRESS   
+0000110C                           103              
+0000110C  2F00                     104              MOVE.L  D0,-(SP)
+0000110E  2F09                     105              MOVE.L  A1,-(SP) 
+00001110  43F9 00001D4E            106              LEA     OPTION2B,A1 * loads prompt to ask input for content
+00001116  103C 000E                107              MOVE.B  #14,D0
+0000111A  4E4F                     108              TRAP    #15
+0000111C  225F                     109              MOVE.L  (SP)+,A1 *MOVE.L  #$0,A1
+0000111E  201F                     110              MOVE.L  (SP)+,D0 *CLR.L   D0
+00001120                           111              
+00001120  4EB9 00001558            112              JSR     GET_STRING
+00001126  4EB9 00001580            113              JSR     ASCII_TO_HEX
+0000112C                           114              * instead of getting a longword, get bytes 4 times with some tweaking in between 
+0000112C                           115              * because odd addresses can only take bytes (not word or longword)            
+0000112C  2F08                     116              MOVE.L  A0,-(SP)
+0000112E  2F0A                     117              MOVE.L  A2,-(SP)
+00001130  2F0B                     118              MOVE.L  A3,-(SP)
+00001132  2079 00003104            119              MOVE.L  ADDRESS,A0
+00001138  45F9 00003008            120              LEA     INPUT_BUFFER,A2
+0000113E  47F9 00003008            121              LEA     INPUT_BUFFER,A3
+00001144  4EB9 000015E8            122              JSR     GET_BYTE
+0000114A  10F9 0000310A            123              MOVE.B  BYTE,(A0)+
+00001150  544A                     124              ADDA    #2,A2 
+00001152  2692                     125              MOVE.L  (A2),(A3)
+00001154  4EB9 000015E8            126              JSR     GET_BYTE
+0000115A  10F9 0000310A            127              MOVE.B  BYTE,(A0)+
+00001160  544A                     128              ADDA    #2,A2 
+00001162  2692                     129              MOVE.L  (A2),(A3)
+00001164  4EB9 000015E8            130              JSR     GET_BYTE
+0000116A  10F9 0000310A            131              MOVE.B  BYTE,(A0)+
+00001170  544A                     132              ADDA    #2,A2 
+00001172  2692                     133              MOVE.L  (A2),(A3)
+00001174  4EB9 000015E8            134              JSR     GET_BYTE
+0000117A  10F9 0000310A            135              MOVE.B  BYTE,(A0)+ * now the longword is inside the memory address
+00001180  265F                     136              MOVE.L  (SP)+,A3
+00001182  245F                     137              MOVE.L  (SP)+,A2
+00001184  205F                     138              MOVE.L  (SP)+,A0
+00001186                           139  
+00001186  4EB9 000019D2            140              JSR     SUCCESS
+0000118C  6000 FE9E                141              BRA     MAIN_MENU
+00001190                           142              
+00001190  2F00                     143  MEM_ERROR   MOVE.L  D0,-(SP)        
+00001192  43F9 00001FA6            144              LEA     INVALID_MEM,A1
+00001198  103C 000E                145              MOVE.B  #14,D0
+0000119C  4E4F                     146              TRAP    #15
+0000119E  201F                     147              MOVE.L  (SP)+,D0
+000011A0  225F                     148              MOVE.L  (SP)+,A1
+000011A2  205F                     149              MOVE.L  (SP)+,A0 
+000011A4  6000 FF1A                150              BRA     WRITEMEM     
+000011A8                           151  * --------------------------------------- *
+000011A8                           152  
+000011A8                           153  * ---- OPTION 3: Subroutine to read from register ---- *
+000011A8  221F                     154  READREG     MOVE.L  (SP)+,D1
+000011AA  48E7 FFFF                155              MOVEM.L D0-D7/A0-A7,-(SP)
+000011AE                           156              
+000011AE  2F00                     157              MOVE.L  D0,-(SP)
+000011B0  2F09                     158              MOVE.L  A1,-(SP) 
+000011B2  43F9 00001DA0            159              LEA     OPTION3,A1 * loads prompt to ask input for register name
+000011B8  103C 000E                160              MOVE.B  #14,D0
+000011BC  4E4F                     161              TRAP    #15
+000011BE  225F                     162              MOVE.L  (SP)+,A1 *MOVE.L  #$0,A1
+000011C0  201F                     163              MOVE.L  (SP)+,D0 *CLR.L   D0
+000011C2  4EB9 00001696            164              JSR     GET_REG
+000011C8  4CDF FFFF                165              MOVEM.L (SP)+,D0-D7/A0-A7
+000011CC  4EB9 000017DA            166              JSR     DISPLAY_REG
+000011D2  6000 FE58                167              BRA     MAIN_MENU
+000011D6                           168  * ------------------------------------------ *
+000011D6                           169  
+000011D6                           170  * ---- OPTION 4: Subroutine to write to register ---- *
+000011D6  221F                     171  WRITEREG    MOVE.L  (SP)+,D1
+000011D8                           172              
+000011D8  2F00                     173              MOVE.L  D0,-(SP)
+000011DA  2F09                     174              MOVE.L  A1,-(SP)
+000011DC  43F9 00001DDD            175              LEA     OPTION4A,A1 * loads prompt to ask input for register name
+000011E2  103C 000E                176              MOVE.B  #14,D0
+000011E6  4E4F                     177              TRAP    #15
+000011E8  225F                     178              MOVE.L  (SP)+,A1 *MOVE.L  #$0,A1
+000011EA  201F                     179              MOVE.L  (SP)+,D0 *CLR.L   D0
+000011EC                           180              
+000011EC  4EB9 00001696            181              JSR     GET_REG
+000011F2                           182              
+000011F2  2F01                     183              MOVE.L  D1,-(SP)
+000011F4  4281                     184              CLR.L   D1
+000011F6  1239 0000310C            185              MOVE.B  REG_NAME,D1
+000011FC  0C41 00A7                186              CMPI    #$A7,D1
+00001200  6700 016A                187              BEQ     A7_ERROR
+00001204  221F                     188              MOVE.L  (SP)+,D1 *CLR.L   D1
+00001206                           189              
+00001206  2F00                     190              MOVE.L  D0,-(SP)
+00001208  2F09                     191              MOVE.L  A1,-(SP)
+0000120A  43F9 00001E19            192              LEA     OPTION4B,A1 * loads prompt to ask input for content
+00001210  103C 000E                193              MOVE.B  #14,D0
+00001214  4E4F                     194              TRAP    #15
+00001216  225F                     195              MOVE.L  (SP)+,A1 *MOVE.L  #$0,A1
+00001218  201F                     196              MOVE.L  (SP)+,D0 *CLR.L   D0
+0000121A  4EB9 00001558            197              JSR     GET_STRING
+00001220  4EB9 00001580            198              JSR     ASCII_TO_HEX
+00001226  4EB9 0000160E            199              JSR     GET_LONGWORD
+0000122C                           200             
+0000122C  2F00                     201              MOVE.L  D0,-(SP)
+0000122E  4280                     202              CLR.L   D0
+00001230  1039 0000310C            203              MOVE.B  REG_NAME,D0
+00001236  0C40 00D0                204              CMPI    #$D0,D0
+0000123A  6700 0072                205              BEQ     WRITE_TO_D0
+0000123E  0C40 00D1                206              CMPI    #$D1,D0
+00001242  6700 0076                207              BEQ     WRITE_TO_D1
+00001246  0C40 00D2                208              CMPI    #$D2,D0
+0000124A  6700 007A                209              BEQ     WRITE_TO_D2
+0000124E  0C40 00D3                210              CMPI    #$D3,D0
+00001252  6700 007E                211              BEQ     WRITE_TO_D3
+00001256  0C40 00D4                212              CMPI    #$D4,D0
+0000125A  6700 0082                213              BEQ     WRITE_TO_D4
+0000125E  0C40 00D5                214              CMPI    #$D5,D0
+00001262  6700 0086                215              BEQ     WRITE_TO_D5
+00001266  0C40 00D6                216              CMPI    #$D6,D0
+0000126A  6700 008A                217              BEQ     WRITE_TO_D6
+0000126E  0C40 00D7                218              CMPI    #$D7,D0
+00001272  6700 008E                219              BEQ     WRITE_TO_D7
+00001276  0C40 00A0                220              CMPI    #$A0,D0
+0000127A  6700 0092                221              BEQ     WRITE_TO_A0
+0000127E  0C40 00A1                222              CMPI    #$A1,D0
+00001282  6700 0096                223              BEQ     WRITE_TO_A1
+00001286  0C40 00A2                224              CMPI    #$A2,D0
+0000128A  6700 009A                225              BEQ     WRITE_TO_A2
+0000128E  0C40 00A3                226              CMPI    #$A3,D0
+00001292  6700 009E                227              BEQ     WRITE_TO_A3
+00001296  0C40 00A4                228              CMPI    #$A4,D0
+0000129A  6700 00A2                229              BEQ     WRITE_TO_A4
+0000129E  0C40 00A5                230              CMPI    #$A5,D0
+000012A2  6700 00A6                231              BEQ     WRITE_TO_A5
+000012A6  0C40 00A6                232              CMPI    #$A6,D0
+000012AA  6700 00AA                233              BEQ     WRITE_TO_A6
+000012AE                           234  
+000012AE  201F                     235  WRITE_TO_D0 MOVE.L  (SP)+,D0
+000012B0  2039 00003100            236              MOVE.L  LONGWORD,D0
+000012B6  6000 00AA                237              BRA     WRITEREG_OK
+000012BA  201F                     238  WRITE_TO_D1 MOVE.L  (SP)+,D0
+000012BC  2239 00003100            239              MOVE.L  LONGWORD,D1
+000012C2  6000 009E                240              BRA     WRITEREG_OK            
+000012C6  201F                     241  WRITE_TO_D2 MOVE.L  (SP)+,D0
+000012C8  2439 00003100            242              MOVE.L  LONGWORD,D2
+000012CE  6000 0092                243              BRA     WRITEREG_OK
+000012D2  201F                     244  WRITE_TO_D3 MOVE.L  (SP)+,D0
+000012D4  2639 00003100            245              MOVE.L  LONGWORD,D3
+000012DA  6000 0086                246              BRA     WRITEREG_OK
+000012DE  201F                     247  WRITE_TO_D4 MOVE.L  (SP)+,D0
+000012E0  2839 00003100            248              MOVE.L  LONGWORD,D4
+000012E6  6000 007A                249              BRA     WRITEREG_OK            
+000012EA  201F                     250  WRITE_TO_D5 MOVE.L  (SP)+,D0
+000012EC  2A39 00003100            251              MOVE.L  LONGWORD,D5
+000012F2  6000 006E                252              BRA     WRITEREG_OK
+000012F6  201F                     253  WRITE_TO_D6 MOVE.L  (SP)+,D0
+000012F8  2C39 00003100            254              MOVE.L  LONGWORD,D6
+000012FE  6000 0062                255              BRA     WRITEREG_OK
+00001302  201F                     256  WRITE_TO_D7 MOVE.L  (SP)+,D0
+00001304  2E39 00003100            257              MOVE.L  LONGWORD,D7
+0000130A  6000 0056                258              BRA     WRITEREG_OK            
+0000130E  201F                     259  WRITE_TO_A0 MOVE.L  (SP)+,D0
+00001310  2079 00003100            260              MOVE.L  LONGWORD,A0
+00001316  6000 004A                261              BRA     WRITEREG_OK
+0000131A  201F                     262  WRITE_TO_A1 MOVE.L  (SP)+,D0
+0000131C  2279 00003100            263              MOVE.L  LONGWORD,A1
+00001322  6000 003E                264              BRA     WRITEREG_OK
+00001326  201F                     265  WRITE_TO_A2 MOVE.L  (SP)+,D0
+00001328  2479 00003100            266              MOVE.L  LONGWORD,A2
+0000132E  6000 0032                267              BRA     WRITEREG_OK
+00001332  201F                     268  WRITE_TO_A3 MOVE.L  (SP)+,D0
+00001334  2679 00003100            269              MOVE.L  LONGWORD,A3
+0000133A  6000 0026                270              BRA     WRITEREG_OK
+0000133E  201F                     271  WRITE_TO_A4 MOVE.L  (SP)+,D0
+00001340  2879 00003100            272              MOVE.L  LONGWORD,A4
+00001346  6000 001A                273              BRA     WRITEREG_OK
+0000134A  201F                     274  WRITE_TO_A5 MOVE.L  (SP)+,D0
+0000134C  2A79 00003100            275              MOVE.L  LONGWORD,A5
+00001352  6000 000E                276              BRA     WRITEREG_OK
+00001356  201F                     277  WRITE_TO_A6 MOVE.L  (SP)+,D0
+00001358  2C79 00003100            278              MOVE.L  LONGWORD,A6
+0000135E  6000 0002                279              BRA     WRITEREG_OK
+00001362                           280              
+00001362  4EB9 000019D2            281  WRITEREG_OK JSR     SUCCESS
+00001368  6000 FCC2                282              BRA     MAIN_MENU
+0000136C                           283  
+0000136C  221F                     284  A7_ERROR    MOVE.L  (SP)+,D1
+0000136E  2F00                     285              MOVE.L  D0,-(SP)
+00001370  2F09                     286              MOVE.L  A1,-(SP)
+00001372  43F9 00001F60            287              LEA     A7_INVALID,A1
+00001378  103C 000E                288              MOVE.B  #14,D0
+0000137C  4E4F                     289              TRAP    #15
+0000137E  225F                     290              MOVE.L  (SP)+,A1 *MOVE.L  #$0,A1
+00001380  201F                     291              MOVE.L  (SP)+,D0 *CLR.L   D0
+00001382  6000 FE52                292              BRA     WRITEREG
+00001386                           293  * ----------------------------------------- *
+00001386                           294  
+00001386                           295  * ---- OPTION 5: Subroutine to load s-record ---- *
+00001386  221F                     296  LOADSREC    MOVE.L  (SP)+,D1
+00001388  48E7 FFFF                297              MOVEM.L D0-D7/A0-A7,-(SP)
+0000138C                           298              
+0000138C  43F9 00001E6B            299              LEA     OPTION5,A1 * loads prompt to ask input for s-record
+00001392  103C 000E                300              MOVE.B  #14,D0
+00001396  4E4F                     301              TRAP    #15
+00001398  227C 00000000            302              MOVE.L  #$0,A1
+0000139E  4280                     303              CLR.L   D0
+000013A0                           304              
+000013A0  43F9 00003008            305  NEXT_LINE   LEA     INPUT_BUFFER,A1
+000013A6  103C 0002                306              MOVE.B  #2,D0 *  Task #2 Read string from keyboard and store at (A1), NULL terminated, length retuned in D1.W (max 80)
+000013AA  4E4F                     307              TRAP    #15 
+000013AC  4280                     308              CLR.L   D0
+000013AE  4281                     309              CLR.L   D1 * because length is returned in D1.W
+000013B0                           310              * with the string stored in (A1), replace each byte by its HEX number equivalent
+000013B0  41D1                     311              LEA     (A1),A0 * Copies the address of the string over to A0   
+000013B2                           312              * skips the first two bytes (i.e. S) because it's already stored as an HEX ASCII
+000013B2  5288                     313              ADDA.L  #$1,A0
+000013B4  5289                     314              ADDA.L  #$1,A1
+000013B6                           315              
+000013B6  1011                     316  ASCII_TO_HEX_LOOP1  MOVE.B  (A1),D0
+000013B8  0C40 0000                317                      CMPI    #$0,D0 
+000013BC  6700 002E                318                      BEQ     END_CONVERSION1 * if the current byte is the NULL element, end the conversion because end of string reached
+000013C0  0C40 0030                319                      CMPI    #$30,D0 * make sure that it is a digit between 0 and F
+000013C4  6D00 0032                320                      BLT     TRY_AGAIN1
+000013C8  0C40 0039                321                      CMPI    #$39,D0
+000013CC  6E00 000A                322                      BGT     CHECK_LETTER1
+000013D0  0440 0030                323  TO_HEX1             SUBI    #$30,D0 * subtract the number by 30 to get the desired number
+000013D4  12C0                     324                      MOVE.B  D0,(A1)+
+000013D6  60DE                     325                      BRA     ASCII_TO_HEX_LOOP1
+000013D8  0C40 0041                326  CHECK_LETTER1       CMPI    #$41,D0
+000013DC  6D00 001A                327                      BLT     TRY_AGAIN1
+000013E0  0C40 0046                328                      CMPI    #$46,D0
+000013E4  6E00 0012                329                      BGT     TRY_AGAIN1
+000013E8  5F40                     330                      SUBI    #$07,D0
+000013EA  60E4                     331                      BRA     TO_HEX1
+000013EC  103C 0000                332  END_CONVERSION1     MOVE.B  #$0,D0 * Null terminate the string so task 14 can be used to output it if needed
+000013F0  1280                     333                      MOVE.B  D0,(A1)
+000013F2  4280                     334                      CLR.L   D0  
+000013F4  6000 001E                335                      BRA     RETURN
+000013F8  43F9 00002033            336  TRY_AGAIN1          LEA     INVALID_CHAR,A1
+000013FE  103C 000E                337                      MOVE.B  #14,D0
+00001402  4E4F                     338                      TRAP    #15
+00001404  227C 00000000            339                      MOVE.L  #$0,A1
+0000140A  4280                     340                      CLR.L   D0
+0000140C  4CDF FFFF                341                      MOVEM.L (SP)+,D0-D7/A0-A7
+00001410  6000 FF74                342                      BRA     LOADSREC            
+00001414  12FC 007E                343  RETURN  MOVE.B  #$7E,(A1)+ * puts a ~ character to mark the end of the string
+00001418  49F9 00003090            344          LEA     STRING,A4
+0000141E  41F9 00003008            345          LEA     INPUT_BUFFER,A0
+00001424  18D8                     346          MOVE.B  (A0)+,(A4)+
+00001426  18D8                     347          MOVE.B  (A0)+,(A4)+
+00001428  1218                     348  GET_STRING2 MOVE.B  (A0)+,D1
+0000142A  0C41 007E                349              CMPI    #$7E,D1
+0000142E  6700 0010                350              BEQ     END_STRING
+00001432  1418                     351              MOVE.B  (A0)+,D2
+00001434  E909                     352              LSL.B   #4,D1
+00001436  D242                     353              ADD     D2,D1
+00001438  18C1                     354              MOVE.B  D1,(A4)+
+0000143A  4281                     355              CLR.L   D1
+0000143C  4282                     356              CLR.L   D2
+0000143E  60E8                     357              BRA     GET_STRING2         
+00001440                           358              * now the HEX string is located into STRING
+00001440                           359              * Validate that string
+00001440  41F9 00003090            360  END_STRING  LEA     STRING,A0
+00001446  43D0                     361              LEA     (A0),A1
+00001448  1019                     362              MOVE.B  (A1)+,D0
+0000144A  0C40 0053                363              CMPI    #$53,D0
+0000144E  6600 0072                364              BNE     NOT_SREC
+00001452  1019                     365              MOVE.B  (A1)+,D0
+00001454  0C40 0000                366              CMPI    #$00,D0
+00001458  6700 002E                367              BEQ     TYPE0
+0000145C  0C40 0001                368              CMPI    #$01,D0
+00001460  6700 0030                369              BEQ     TYPE1
+00001464  0C40 0002                370              CMPI    #$02,D0
+00001468  6700 0032                371              BEQ     TYPE2
+0000146C  0C40 0008                372              CMPI    #$08,D0
+00001470  6700 0034                373              BEQ     TYPE8
+00001474                           374               
+00001474                           375  LOAD_DATA   * starts copying data...
+00001474  14D9                     376              MOVE.B  (A1)+,(A2)+
+00001476  5247                     377              ADDI    #1,D7
+00001478  B047                     378              CMP     D7,D0 * compare counter to the length of the data 
+0000147A  6700 0004                379              BEQ     DONE_LOADING * if the whole data was processed, get out of this loop
+0000147E  60F4                     380              BRA     LOAD_DATA                        
+00001480                           381          
+00001480  4280                     382  DONE_LOADING    CLR.L   D0
+00001482  4287                     383                  CLR.L   D7
+00001484  6000 FF1A                384                  BRA     NEXT_LINE
+00001488                           385                                                
+00001488  45F9 00004000            386  TYPE0       LEA     SREC_MEMORY,A2
+0000148E  6000 FF10                387              BRA     NEXT_LINE   
+00001492                           388  
+00001492  1019                     389  TYPE1       MOVE.B  (A1)+,D0 * store byte count into D0
+00001494  5740                     390              SUBI    #3,D0 * byte count minus 3 is the length of the data
+00001496  5449                     391              ADDA    #2,A1 * skip the address
+00001498  7E00                     392              MOVEQ   #0,D7 * initialize counter
+0000149A  60D8                     393              BRA     LOAD_DATA
+0000149C                           394  
+0000149C  1019                     395  TYPE2       MOVE.B  (A1)+,D0 * store byte count into D0
+0000149E  5940                     396              SUBI    #4,D0 * byte count minus 4 is the length of the data
+000014A0  5649                     397              ADDA    #3,A1 * skip the address
+000014A2  7E00                     398              MOVEQ   #0,D7 * initialize counter
+000014A4  60CE                     399              BRA     LOAD_DATA
+000014A6                           400  
+000014A6  43F9 0000208F            401  TYPE8       LEA     LOAD_DONE,A1
+000014AC  103C 000E                402              MOVE.B  #14,D0
+000014B0  4E4F                     403              TRAP    #15
+000014B2  227C 00000000            404              MOVE.L  #$0,A1
+000014B8  4280                     405              CLR.L   D0
+000014BA  4CDF FFFF                406              MOVEM.L (SP)+,D0-D7/A0-A7
+000014BE  6000 FB6C                407              BRA     MAIN_MENU
+000014C2                           408              
+000014C2  43F9 00002052            409  NOT_SREC    LEA     INVALID_SREC,A1
+000014C8  103C 000E                410              MOVE.B  #14,D0
+000014CC  4E4F                     411              TRAP    #15
+000014CE  227C 00000000            412              MOVE.L  #$0,A1
+000014D4  4280                     413              CLR.L   D0
+000014D6  4CDF FFFF                414              MOVEM.L (SP)+,D0-D7/A0-A7
+000014DA  6000 FEAA                415              BRA     LOADSREC
+000014DE                           416  * ------------------------------------- *
+000014DE                           417  
+000014DE                           418  * ---- OPTION 6: Subroutine to run s-record ---- *
+000014DE  221F                     419  RUNSREC     MOVE.L  (SP)+,D1
+000014E0  48E7 8040                420              MOVEM.L D0/A1,-(SP)
+000014E4  0C39 00FF 00004000       421              CMP.B   #$FF,SREC_MEMORY * checks to see if SREC_MEMORY is empty
+000014EC  6700 0038                422              BEQ     SREC_ERROR * if no s-record found, display an error message
+000014F0  43F9 00001EA3            423              LEA     OPTION6,A1 * otherwise, loads message to let the user know that they chose to run an s-record
+000014F6  103C 000E                424              MOVE.B  #14,D0
+000014FA  4E4F                     425              TRAP    #15
+000014FC  227C 00000000            426              MOVE.L  #$0,A1
+00001502  4280                     427              CLR.L   D0            
+00001504  4EB9 00004000            428              JSR     SREC_MEMORY * go to the allocated memory location for s-records to run it
+0000150A  43F9 000020BD            429              LEA     RUN_DONE,A1
+00001510  103C 000E                430              MOVE.B  #14,D0
+00001514  4E4F                     431              TRAP    #15
+00001516  227C 00000000            432              MOVE.L  #$0,A1
+0000151C  4280                     433              CLR.L   D0
+0000151E  4CDF 0201                434              MOVEM.L (SP)+,D0/A1
+00001522  6000 FB08                435              BRA     MAIN_MENU
+00001526                           436              
+00001526  43F9 00001EBA            437  SREC_ERROR  LEA     NO_SREC,A1 * display an error message for no s-record found
+0000152C  103C 000E                438              MOVE.B  #14,D0
+00001530  4E4F                     439              TRAP    #15  
+00001532  227C 00000000            440              MOVE.L  #$0,A1
+00001538  4280                     441              CLR.L   D0
+0000153A  4CDF 0201                442              MOVEM.L (SP)+,D0/A1
+0000153E  6000 FAEC                443              BRA     MAIN_MENU        
+00001542                           444  * ------------------------------------ *
+00001542                           445  
+00001542                           446  
+00001542                           447  * ---- Subroutines shared by other subroutines ---- *
+00001542                           448  * ------------------------------------------------- *
+00001542                           449  * ---- Display an error message for invalid input ---- *
+00001542  48E7 8040                450  INVALID_INPUT   MOVEM.L D0/A1,-(SP)
+00001546  43F9 00001CA4            451                  LEA     INVALID_CHOICE,A1
+0000154C  103C 000E                452                  MOVE.B  #14,D0
+00001550  4E4F                     453                  TRAP    #15
+00001552  4CDF 0201                454                  MOVEM.L (SP)+,D0/A1
+00001556  4E75                     455                  RTS
+00001558                           456  * ---------------------------------------------------- *
+00001558                           457  
+00001558                           458  * ---- Subroutine to input a string character by character ---- *
+00001558  48E7 C040                459  GET_STRING  MOVEM.L D0-D1/A1,-(SP)
+0000155C  43F9 00003008            460              LEA     INPUT_BUFFER,A1 * Loads address of INPUT_BUFFER into A1
+00001562  4291                     461              CLR.L   (A1)
+00001564  4281                     462              CLR.L   D1
+00001566  103C 0005                463  GET_CHAR_LOOP   MOVE.B  #5,D0  * Read single character from the keyboard into D1.B
+0000156A  4E4F                     464                  TRAP    #15
+0000156C  12C1                     465                  MOVE.B  D1,(A1)+
+0000156E  0C41 000D                466                  CMPI    #$0D,D1 * If inputted character is not CR (carriage return),
+00001572  66F2                     467                  BNE     GET_CHAR_LOOP * keep inputting character    
+00001574  4280                     468                  CLR.L   D0                
+00001576  133C 0000                469                  MOVE.B  #$0,-(A1) * Null terminate the string so task 14 can be used to output it if needed
+0000157A  4CDF 0203                470                  MOVEM.L (SP)+,D0-D1/A1
+0000157E  4E75                     471                  RTS
+00001580                           472  * ------------------------------------------------------------- *            
+00001580                           473  
+00001580                           474  * ---- Subroutine to convert keyboard input values needing to be processed (i.e address, register) into HEX value ---- * 
+00001580  48E7 8040                475  ASCII_TO_HEX    MOVEM.L D0/A1,-(SP)
+00001584  43F9 00003008            476                  LEA     INPUT_BUFFER,A1
+0000158A  4280                     477                  CLR.L   D0
+0000158C  1011                     478  ASCII_TO_HEX_LOOP   MOVE.B  (A1),D0
+0000158E  0C40 0000                479                      CMPI    #$0,D0 
+00001592  6700 002E                480                      BEQ     END_CONVERSION * if the current byte is the NULL element, end the conversion because end of string reached
+00001596  0C40 0030                481                      CMPI    #$30,D0 * make sure that it is a digit between 0 and F
+0000159A  6D00 0030                482                      BLT     TRY_AGAIN
+0000159E  0C40 0039                483                      CMPI    #$39,D0
+000015A2  6E00 000A                484                      BGT     CHECK_LETTER
+000015A6  0440 0030                485  TO_HEX              SUBI    #$30,D0 * subtract the number by 30 to get the desired number
+000015AA  12C0                     486                      MOVE.B  D0,(A1)+
+000015AC  60DE                     487                      BRA     ASCII_TO_HEX_LOOP
+000015AE  0C40 0041                488  CHECK_LETTER        CMPI    #$41,D0
+000015B2  6D00 0018                489                      BLT     TRY_AGAIN
+000015B6  0C40 0046                490                      CMPI    #$46,D0
+000015BA  6E00 0010                491                      BGT     TRY_AGAIN
+000015BE  5F40                     492                      SUBI    #$07,D0
+000015C0  60E4                     493                      BRA     TO_HEX
+000015C2  1280                     494  END_CONVERSION      MOVE.B  D0,(A1) * Null terminate the string so task 14 can be used to output it if needed
+000015C4  4280                     495                      CLR.L   D0
+000015C6  4CDF 0201                496                      MOVEM.L (SP)+,D0/A1
+000015CA  4E75                     497                      RTS
+000015CC  43F9 00002033            498  TRY_AGAIN           LEA     INVALID_CHAR,A1
+000015D2  103C 000E                499                      MOVE.B  #14,D0
+000015D6  4E4F                     500                      TRAP    #15
+000015D8  227C 00000000            501                      MOVE.L  #$0,A1
+000015DE  4280                     502                      CLR.L   D0
+000015E0  4CDF 0201                503                      MOVEM.L (SP)+,D0/A1
+000015E4  6000 FA46                504                      BRA     MAIN_MENU         
+000015E8                           505  * ---------------------------------------------------------------------------------- *   
+000015E8                           506  
+000015E8                           507  * ---- Subroutine to get a byte from HEX ---- *
+000015E8  48E7 C060                508  GET_BYTE        MOVEM.L D0-D1/A1-A2,-(SP)
+000015EC  43F9 00003008            509                  LEA     INPUT_BUFFER,A1
+000015F2  45F9 0000310A            510                  LEA     BYTE,A2
+000015F8  4280                     511                  CLR.L   D0
+000015FA  1019                     512                  MOVE.B  (A1)+,D0 * assuming the HEX values are referenced by A1
+000015FC  1219                     513                  MOVE.B  (A1)+,D1
+000015FE  E908                     514                  LSL.B   #4,D0
+00001600  D041                     515                  ADD     D1,D0
+00001602  1480                     516                  MOVE.B  D0,(A2) * puts byte in BYTE
+00001604  4280                     517                  CLR.L   D0
+00001606  4281                     518                  CLR.L   D1
+00001608  4CDF 0603                519                  MOVEM.L (SP)+,D0-D1/A1-A2
+0000160C  4E75                     520                  RTS
+0000160E                           521  * -------------------------------------------------- *
+0000160E                           522  
+0000160E                           523  * ---- Subroutine to get a longword from HEX ---- *
+0000160E  48E7 C074                524  GET_LONGWORD    MOVEM.L D0-D1/A1-A3/A5,-(SP)
+00001612  43F9 00003008            525                  LEA     INPUT_BUFFER,A1
+00001618  45F9 0000310A            526                  LEA     BYTE,A2
+0000161E  47F9 00003108            527                  LEA     WORD,A3
+00001624  4BF9 00003100            528                  LEA     LONGWORD,A5
+0000162A  4280                     529                  CLR.L   D0
+0000162C  1019                     530                  MOVE.B  (A1)+,D0 * assuming contents of INPUT_BUFFER are HEX ASCII values
+0000162E  1219                     531                  MOVE.B  (A1)+,D1
+00001630  E908                     532                  LSL.B   #4,D0
+00001632  D041                     533                  ADD     D1,D0
+00001634  1480                     534                  MOVE.B  D0,(A2) * puts byte in BYTE
+00001636  4280                     535                  CLR.L   D0
+00001638  4281                     536                  CLR.L   D1
+0000163A  16F9 0000310A            537                  MOVE.B  BYTE,(A3)+
+00001640                           538                  
+00001640  1019                     539                  MOVE.B  (A1)+,D0
+00001642  1219                     540                  MOVE.B  (A1)+,D1
+00001644  E908                     541                  LSL.B   #4,D0
+00001646  D041                     542                  ADD     D1,D0
+00001648  1480                     543                  MOVE.B  D0,(A2)
+0000164A  4280                     544                  CLR.L   D0
+0000164C  4281                     545                  CLR.L   D1
+0000164E  16B9 0000310A            546                  MOVE.B  BYTE,(A3)     
+00001654                           547                  
+00001654  3AB9 00003108            548                  MOVE.W  WORD,(A5)
+0000165A  544D                     549                  ADDA    #2,A5
+0000165C  47F9 00003108            550                  LEA     WORD,A3              
+00001662                           551  
+00001662  1019                     552                  MOVE.B  (A1)+,D0
+00001664  1219                     553                  MOVE.B  (A1)+,D1
+00001666  E908                     554                  LSL.B   #4,D0
+00001668  D041                     555                  ADD     D1,D0
+0000166A  1480                     556                  MOVE.B  D0,(A2)
+0000166C  4280                     557                  CLR.L   D0
+0000166E  4281                     558                  CLR.L   D1
+00001670  16F9 0000310A            559                  MOVE.B  BYTE,(A3)+
+00001676                           560                  
+00001676  1019                     561                  MOVE.B  (A1)+,D0
+00001678  1219                     562                  MOVE.B  (A1)+,D1
+0000167A  E908                     563                  LSL.B   #4,D0
+0000167C  D041                     564                  ADD     D1,D0
+0000167E  1480                     565                  MOVE.B  D0,(A2)
+00001680  4280                     566                  CLR.L   D0
+00001682  4281                     567                  CLR.L   D1
+00001684  16B9 0000310A            568                  MOVE.B  BYTE,(A3)     
+0000168A                           569                  
+0000168A  3AB9 00003108            570                  MOVE.W   WORD,(A5)
+00001690                           571                  
+00001690  4CDF 2E03                572                  MOVEM.L (SP)+,D0-D1/A1-A3/A5
+00001694  4E75                     573                  RTS        
+00001696                           574  * -------------------------------------------------- *
+00001696                           575  
+00001696                           576  * ---- Subroutine to get a register name ---- *
+00001696  48E7 8050                577  GET_REG     MOVEM.L D0/A1/A3,-(SP)
+0000169A  47F9 0000310C            578              LEA     REG_NAME,A3
+000016A0  4EB8 1558                579              JSR     GET_STRING
+000016A4  4EB8 1580                580              JSR     ASCII_TO_HEX
+000016A8  4EB8 15E8                581              JSR     GET_BYTE
+000016AC  16B9 0000310A            582              MOVE.B  BYTE,(A3)
+000016B2                           583              
+000016B2                           584              * check if valid register name
+000016B2  0C13 00D0                585              CMPI.B    #$D0,(A3)
+000016B6  6700 0094                586              BEQ       IS_REG
+000016BA  0C13 00D1                587              CMPI.B    #$D1,(A3)
+000016BE  6700 008C                588              BEQ       IS_REG
+000016C2  0C13 00D2                589              CMPI.B    #$D2,(A3)
+000016C6  6700 0084                590              BEQ       IS_REG
+000016CA  0C13 00D3                591              CMPI.B    #$D3,(A3)
+000016CE  6700 007C                592              BEQ       IS_REG
+000016D2  0C13 00D4                593              CMPI.B    #$D4,(A3)
+000016D6  6700 0074                594              BEQ       IS_REG
+000016DA  0C13 00D5                595              CMPI.B    #$D5,(A3)
+000016DE  6700 006C                596              BEQ       IS_REG
+000016E2  0C13 00D6                597              CMPI.B    #$D6,(A3)
+000016E6  6700 0064                598              BEQ       IS_REG
+000016EA  0C13 00D7                599              CMPI.B    #$D7,(A3)
+000016EE  6700 005C                600              BEQ       IS_REG
+000016F2  0C13 00A0                601              CMPI.B    #$A0,(A3)
+000016F6  6700 0054                602              BEQ       IS_REG
+000016FA  0C13 00A1                603              CMPI.B    #$A1,(A3)
+000016FE  6700 004C                604              BEQ       IS_REG
+00001702  0C13 00A2                605              CMPI.B    #$A2,(A3)
+00001706  6700 0044                606              BEQ       IS_REG
+0000170A  0C13 00A3                607              CMPI.B    #$A3,(A3)
+0000170E  6700 003C                608              BEQ       IS_REG
+00001712  0C13 00A4                609              CMPI.B    #$A4,(A3)
+00001716  6700 0034                610              BEQ       IS_REG
+0000171A  0C13 00A5                611              CMPI.B    #$A5,(A3)
+0000171E  6700 002C                612              BEQ       IS_REG
+00001722  0C13 00A6                613              CMPI.B    #$A6,(A3)
+00001726  6700 0024                614              BEQ       IS_REG
+0000172A  0C13 00A7                615              CMPI.B    #$A7,(A3)
+0000172E  6700 001C                616              BEQ       IS_REG
+00001732                           617              * if no match, invalid register name
+00001732  43F9 00001F20            618              LEA     IS_NOT_REG,A1
+00001738  700E                     619              MOVE.L  #14,D0
+0000173A  4E4F                     620              TRAP    #15
+0000173C  227C 00000000            621              MOVE.L  #$0,A1
+00001742  4280                     622              CLR.L   D0
+00001744  4CDF 0A01                623              MOVEM.L (SP)+,D0/A1/A3
+00001748  6000 FF4C                624              BRA     GET_REG
+0000174C                           625              
+0000174C  4CDF 0A01                626  IS_REG      MOVEM.L (SP)+,D0/A1/A3
+00001750  4E75                     627              RTS        
+00001752                           628  * -------------------------------------------------- *
+00001752                           629  
+00001752                           630  * ---- Subroutine to display memory content ---- *
+00001752  48E7 FFFF                631  DISPLAY_MEM     MOVEM.L D0-D7/A0-A7,-(SP)
+00001756  43F9 000020DF            632                  LEA     MEM_HEADER_ROW,A1
+0000175C  103C 000E                633                  MOVE.B  #14,D0
+00001760  4E4F                     634                  TRAP    #15
+00001762  227C 00000000            635                  MOVE.L  #$0,A1
+00001768  4280                     636                  CLR.L   D0
+0000176A                           637                  
+0000176A  23F9 00003104 00003100   638                  MOVE.L  ADDRESS,LONGWORD
+00001774  4EB9 000019E8            639                  JSR     HEX_TO_ASCII
+0000177A  43F9 00003110            640                  LEA     OUTPUT_BUFFER,A1
+00001780  103C 000E                641                  MOVE.B  #14,D0
+00001784  4E4F                     642                  TRAP    #15
+00001786  4280                     643                  CLR.L   D0
+00001788  4281                     644                  CLR.L   D1
+0000178A  123C 003A                645                  MOVE.B  #$3A,D1 * Colon
+0000178E  103C 0006                646                  MOVE.B  #6,D0 * Display single character in D1.B.
+00001792  4E4F                     647                  TRAP    #15
+00001794  4280                     648                  CLR.L   D0
+00001796  4281                     649                  CLR.L   D1
+00001798                           650                  
+00001798  123C 0020                651                  MOVE.B  #$20,D1 * Space
+0000179C  103C 0006                652                  MOVE.B  #6,D0  
+000017A0  4E4F                     653                  TRAP    #15
+000017A2  4280                     654                  CLR.L   D0
+000017A4  4281                     655                  CLR.L   D1  
+000017A6  4283                     656                  CLR.L   D3
+000017A8  41F9 00003100            657                  LEA     LONGWORD,A0
+000017AE  2279 00003104            658                  MOVE.L  ADDRESS,A1
+000017B4                           659                  
+000017B4  163C 0000                660                  MOVE.B  #0,D3 * initialize counter 
+000017B8  10D9                     661  NEXT_BYTE       MOVE.B  (A1)+,(A0)+
+000017BA  5243                     662                  ADDI    #1,D3
+000017BC  0C43 0004                663                  CMPI    #4,D3
+000017C0  6DF6                     664                  BLT     NEXT_BYTE
+000017C2                           665                  
+000017C2  4EB9 000019E8            666                  JSR     HEX_TO_ASCII
+000017C8  43F9 00003110            667                  LEA     OUTPUT_BUFFER,A1
+000017CE  103C 000E                668                  MOVE.B  #14,D0
+000017D2  4E4F                     669                  TRAP    #15
+000017D4                           670  
+000017D4  4CDF FFFF                671                  MOVEM.L (SP)+,D0-D7/A0-A7
+000017D8  4E75                     672                  RTS
+000017DA                           673  * ------------------------------------------------------- *
+000017DA                           674  
+000017DA                           675  *--- Subroutine to display register content ---*
+000017DA  48E7 FFFF                676  DISPLAY_REG    MOVEM.L D0-D7/A0-A7,-(SP) * save every register!!!
+000017DE                           677  
+000017DE  2F00                     678                 MOVE.L  D0,-(SP)
+000017E0  2F09                     679                 MOVE.L  A1,-(SP) 
+000017E2  43F9 0000210A            680                 LEA     REG_HEADER_ROW,A1
+000017E8  103C 000E                681                 MOVE.B  #14,D0
+000017EC  4E4F                     682                 TRAP    #15
+000017EE  225F                     683                 MOVE.L  (SP)+,A1 *MOVE.L  #$0,A1
+000017F0  201F                     684                 MOVE.L  (SP)+,D0 *CLR.L   D0
+000017F2                           685                 
+000017F2  2F00                     686                 MOVE.L  D0,-(SP)
+000017F4  2F01                     687                 MOVE.L  D1,-(SP) 
+000017F6  123C 0020                688                 MOVE.B  #$20,D1 * Space
+000017FA  103C 0006                689                 MOVE.B  #6,D0  
+000017FE  4E4F                     690                 TRAP    #15               
+00001800  123C 0020                691                 MOVE.B  #$20,D1 * Space
+00001804  103C 0006                692                 MOVE.B  #6,D0  
+00001808  4E4F                     693                 TRAP    #15
+0000180A                           694                 
+0000180A  2F02                     695                 MOVE.L  D2,-(SP)
+0000180C  4281                     696                 CLR.L   D1
+0000180E  1239 0000310C            697                 MOVE.B  REG_NAME,D1
+00001814  103C 000F                698                 MOVE.B  #15,D0 * Display the unsigned number in D1.L converted to number base (2 through 36) contained in D2.B.
+00001818  143C 0010                699                 MOVE.B  #16,D2
+0000181C  4E4F                     700                 TRAP    #15
+0000181E  241F                     701                 MOVE.L  (SP)+,D2
+00001820                           702                 
+00001820  123C 003A                703                 MOVE.B  #$3A,D1 * Colon
+00001824  103C 0006                704                 MOVE.B  #6,D0 * Display single character in D1.B.
+00001828  4E4F                     705                 TRAP    #15
+0000182A  123C 0020                706                 MOVE.B  #$20,D1 * Space
+0000182E  103C 0006                707                 MOVE.B  #6,D0  
+00001832  4E4F                     708                 TRAP    #15
+00001834  123C 0020                709                 MOVE.B  #$20,D1 * Space
+00001838  103C 0006                710                 MOVE.B  #6,D0  
+0000183C  4E4F                     711                 TRAP    #15
+0000183E  123C 0020                712                 MOVE.B  #$20,D1 * Space
+00001842  103C 0006                713                 MOVE.B  #6,D0  
+00001846  4E4F                     714                 TRAP    #15    
+00001848  123C 0020                715                 MOVE.B  #$20,D1 * Space
+0000184C  103C 0006                716                 MOVE.B  #6,D0  
+00001850  4E4F                     717                 TRAP    #15
+00001852  123C 0020                718                 MOVE.B  #$20,D1 * Space
+00001856  103C 0006                719                 MOVE.B  #6,D0  
+0000185A  4E4F                     720                 TRAP    #15
+0000185C  221F                     721                 MOVE.L  (SP)+,D1
+0000185E  201F                     722                 MOVE.L  (SP)+,D0
+00001860                           723              
+00001860  4281                     724              CLR.L   D1   
+00001862  1239 0000310C            725              MOVE.B  REG_NAME,D1
+00001868  0C41 00D0                726              CMPI    #$D0,D1
+0000186C  6700 007A                727              BEQ     GOTO_D0
+00001870  0C41 00D1                728              CMPI    #$D1,D1
+00001874  6700 007E                729              BEQ     GOTO_D1
+00001878  0C41 00D2                730              CMPI    #$D2,D1
+0000187C  6700 0082                731              BEQ     GOTO_D2
+00001880  0C41 00D3                732              CMPI    #$D3,D1
+00001884  6700 0086                733              BEQ     GOTO_D3
+00001888  0C41 00D4                734              CMPI    #$D4,D1
+0000188C  6700 008A                735              BEQ     GOTO_D4
+00001890  0C41 00D5                736              CMPI    #$D5,D1
+00001894  6700 008E                737              BEQ     GOTO_D5
+00001898  0C41 00D6                738              CMPI    #$D6,D1
+0000189C  6700 0092                739              BEQ     GOTO_D6
+000018A0  0C41 00D7                740              CMPI    #$D7,D1
+000018A4  6700 0096                741              BEQ     GOTO_D7
+000018A8  0C41 00A0                742              CMPI    #$A0,D1
+000018AC  6700 009A                743              BEQ     GOTO_A0
+000018B0  0C41 00A1                744              CMPI    #$A1,D1
+000018B4  6700 009E                745              BEQ     GOTO_A1
+000018B8  0C41 00A2                746              CMPI    #$A2,D1
+000018BC  6700 00A2                747              BEQ     GOTO_A2
+000018C0  0C41 00A3                748              CMPI    #$A3,D1
+000018C4  6700 00A6                749              BEQ     GOTO_A3
+000018C8  0C41 00A4                750              CMPI    #$A4,D1
+000018CC  6700 00AA                751              BEQ     GOTO_A4
+000018D0  0C41 00A5                752              CMPI    #$A5,D1
+000018D4  6700 00AE                753              BEQ     GOTO_A5
+000018D8  0C41 00A6                754              CMPI    #$A6,D1
+000018DC  6700 00B2                755              BEQ     GOTO_A6
+000018E0  0C41 00A7                756              CMPI    #$A7,D1
+000018E4  6700 00B6                757              BEQ     GOTO_A7  
+000018E8                           758              
+000018E8                           759  * put the content of the specified individual register into D1
+000018E8  4CDF FFFF                760  GOTO_D0     MOVEM.L (SP)+,D0-D7/A0-A7
+000018EC  2F01                     761              MOVE.L  D1,-(SP)
+000018EE  2200                     762              MOVE.L  D0,D1
+000018F0  6000 00B6                763              BRA     READREG_OK
+000018F4  4CDF FFFF                764  GOTO_D1     MOVEM.L (SP)+,D0-D7/A0-A7
+000018F8  2F01                     765              MOVE.L  D1,-(SP)
+000018FA  2201                     766              MOVE.L  D1,D1
+000018FC  6000 00AA                767              BRA     READREG_OK
+00001900  4CDF FFFF                768  GOTO_D2     MOVEM.L (SP)+,D0-D7/A0-A7
+00001904  2F01                     769              MOVE.L  D1,-(SP)
+00001906  2202                     770              MOVE.L  D2,D1
+00001908  6000 009E                771              BRA     READREG_OK
+0000190C  4CDF FFFF                772  GOTO_D3     MOVEM.L (SP)+,D0-D7/A0-A7
+00001910  2F01                     773              MOVE.L  D1,-(SP)
+00001912  2203                     774              MOVE.L  D3,D1
+00001914  6000 0092                775              BRA     READREG_OK
+00001918  4CDF FFFF                776  GOTO_D4     MOVEM.L (SP)+,D0-D7/A0-A7
+0000191C  2F01                     777              MOVE.L  D1,-(SP)
+0000191E  2204                     778              MOVE.L  D4,D1
+00001920  6000 0086                779              BRA     READREG_OK
+00001924  4CDF FFFF                780  GOTO_D5     MOVEM.L (SP)+,D0-D7/A0-A7
+00001928  2F01                     781              MOVE.L  D1,-(SP)
+0000192A  2205                     782              MOVE.L  D5,D1
+0000192C  6000 007A                783              BRA     READREG_OK
+00001930  4CDF FFFF                784  GOTO_D6     MOVEM.L (SP)+,D0-D7/A0-A7
+00001934  2F01                     785              MOVE.L  D1,-(SP)
+00001936  2206                     786              MOVE.L  D6,D1
+00001938  6000 006E                787              BRA     READREG_OK            
+0000193C  4CDF FFFF                788  GOTO_D7     MOVEM.L (SP)+,D0-D7/A0-A7
+00001940  2F01                     789              MOVE.L  D1,-(SP)
+00001942  2207                     790              MOVE.L  D7,D1
+00001944  6000 0062                791              BRA     READREG_OK
+00001948  4CDF FFFF                792  GOTO_A0     MOVEM.L (SP)+,D0-D7/A0-A7
+0000194C  2F01                     793              MOVE.L  D1,-(SP)
+0000194E  2208                     794              MOVE.L  A0,D1
+00001950  6000 0056                795              BRA     READREG_OK
+00001954  4CDF FFFF                796  GOTO_A1     MOVEM.L (SP)+,D0-D7/A0-A7
+00001958  2F01                     797              MOVE.L  D1,-(SP)
+0000195A  2209                     798              MOVE.L  A1,D1
+0000195C  6000 004A                799              BRA     READREG_OK
+00001960  4CDF FFFF                800  GOTO_A2     MOVEM.L (SP)+,D0-D7/A0-A7
+00001964  2F01                     801              MOVE.L  D1,-(SP)
+00001966  220A                     802              MOVE.L  A2,D1
+00001968  6000 003E                803              BRA     READREG_OK
+0000196C  4CDF FFFF                804  GOTO_A3     MOVEM.L (SP)+,D0-D7/A0-A7
+00001970  2F01                     805              MOVE.L  D1,-(SP)
+00001972  220B                     806              MOVE.L  A3,D1
+00001974  6000 0032                807              BRA     READREG_OK
+00001978  4CDF FFFF                808  GOTO_A4     MOVEM.L (SP)+,D0-D7/A0-A7
+0000197C  2F01                     809              MOVE.L  D1,-(SP)
+0000197E  220C                     810              MOVE.L  A4,D1
+00001980  6000 0026                811              BRA     READREG_OK
+00001984  4CDF FFFF                812  GOTO_A5     MOVEM.L (SP)+,D0-D7/A0-A7
+00001988  2F01                     813              MOVE.L  D1,-(SP)
+0000198A  220D                     814              MOVE.L  A5,D1
+0000198C  6000 001A                815              BRA     READREG_OK
+00001990  4CDF FFFF                816  GOTO_A6     MOVEM.L (SP)+,D0-D7/A0-A7
+00001994  2F01                     817              MOVE.L  D1,-(SP)
+00001996  220E                     818              MOVE.L  A6,D1
+00001998  6000 000E                819              BRA     READREG_OK          
+0000199C  4CDF FFFF                820  GOTO_A7     MOVEM.L (SP)+,D0-D7/A0-A7
+000019A0  2F01                     821              MOVE.L  D1,-(SP)
+000019A2  220F                     822              MOVE.L  A7,D1
+000019A4  6000 0002                823              BRA     READREG_OK
+000019A8                           824  
+000019A8  21C1 3000                825  READREG_OK     MOVE.L  D1,$3000
+000019AC  221F                     826                 MOVE.L  (SP)+,D1
+000019AE  48E7 8040                827                 MOVEM.L D0/A1,-(SP)
+000019B2  23F8 3000 00003100       828                 MOVE.L  $3000,LONGWORD
+000019BA  4EB9 000019E8            829                 JSR     HEX_TO_ASCII
+000019C0  43F9 00003110            830                 LEA     OUTPUT_BUFFER,A1
+000019C6  103C 000E                831                 MOVE.B  #14,D0
+000019CA  4E4F                     832                 TRAP    #15  
+000019CC  4CDF 0201                833                 MOVEM.L (SP)+,D0/A1 
+000019D0                           834      
+000019D0  4E75                     835                 RTS
+000019D2                           836  * ----------------------------------------------- *
+000019D2                           837  
+000019D2                           838  * ---- Confirmation message ---- *
+000019D2  48E7 8040                839  SUCCESS     MOVEM.L D0/A1,-(SP)
+000019D6  43F9 00001F03            840              LEA     WRITE_DONE,A1
+000019DC  103C 000E                841              MOVE.B  #14,D0
+000019E0  4E4F                     842              TRAP    #15
+000019E2  4CDF 0201                843              MOVEM.L (SP)+,D0/A1
+000019E6  4E75                     844              RTS
+000019E8                           845  * ------------------------------ *
+000019E8                           846  
+000019E8                           847  * ---- Subroutine to transform HEX to ASCII ---- *
+000019E8  48E7 FFFF                848  HEX_TO_ASCII    MOVEM.L D0-D7/A0-A7,-(SP)
+000019EC  41F9 00003110            849                  LEA     OUTPUT_BUFFER,A0
+000019F2  43F9 00003100            850                  LEA     LONGWORD,A1 * the HEX longword to convert to ASCII
+000019F8  7400                     851                  MOVE.L  #0,D2 * counter
+000019FA  4280                     852                  CLR.L   D0
+000019FC  4281                     853                  CLR.L   D1
+000019FE                           854                 
+000019FE  1011                     855  SPLIT_BYTE   MOVE.B  (A1),D0
+00001A00  1219                     856               MOVE.B  (A1)+,D1
+00001A02  E808                     857               LSR.B   #4,D0
+00001A04  10C0                     858               MOVE.B  D0,(A0)+
+00001A06  E909                     859               LSL.B   #4,D1
+00001A08  E809                     860               LSR.B   #4,D1
+00001A0A  10C1                     861               MOVE.B  D1,(A0)+
+00001A0C  5242                     862               ADDI    #1,D2
+00001A0E  B43C 0004                863               CMP.B   #4,D2
+00001A12  6DEA                     864               BLT     SPLIT_BYTE
+00001A14                           865                      
+00001A14  41F9 00003110            866               LEA    OUTPUT_BUFFER,A0
+00001A1A  7200                     867               MOVE.L #0,D1
+00001A1C  4280                     868               CLR.L  D0
+00001A1E  1010                     869  HEX_TO_ASCII_LOOP    MOVE.B (A0),D0
+00001A20  0C40 0009                870                       CMPI   #$09,D0
+00001A24  6E00 0014                871                       BGT    LETTER
+00001A28  0640 0030                872                       ADDI   #$30,D0
+00001A2C  10C0                     873                       MOVE.B D0,(A0)+
+00001A2E  5241                     874                       ADDI   #1,D1 
+00001A30  B23C 0008                875                       CMP.B  #8,D1
+00001A34  66E8                     876                       BNE    HEX_TO_ASCII_LOOP
+00001A36  6000 0014                877                       BRA    ASCII_READY                  
+00001A3A                           878                       
+00001A3A  0640 0037                879  LETTER               ADDI   #$37,D0 
+00001A3E  10C0                     880                       MOVE.B D0,(A0)+   
+00001A40  5241                     881                       ADDI   #1,D1  
+00001A42  B23C 0008                882                       CMP.B  #8,D1       
+00001A46  66D6                     883                       BNE    HEX_TO_ASCII_LOOP
+00001A48  6000 0002                884                       BRA    ASCII_READY
+00001A4C                           885  
+00001A4C  10BC 0000                886  ASCII_READY MOVE.B  #$0,(A0) * null terminate the string for output
+00001A50  4CDF FFFF                887              MOVEM.L (SP)+,D0-D7/A0-A7
+00001A54  4E75                     888              RTS
+00001A56                           889                       
+00001A56                           890  * ---------------------------------------------- *
+00001A56                           891  
+00001A56                           892  
+00001A56  FFFF FFFF                893      SIMHALT             ; halt simulator
+00001A5A                           894  
+00001A5A                           895  * Put variables and constants here
+00001A5A                           896  
+00001A5A  =00FFFFFF                897  WHITE   EQU $00FFFFFF
+00001A5A  =0000FF00                898  GREEN   EQU $0000FF00
+00001A5A                           899  
+00001A5A  =00004000                900  SREC_MEMORY EQU $4000 * Memory block for S-Records (Match the origin of the s-record to this)
+00001A5A                           901  
+00001A5A  =0000000D                902  CR  EQU $0D
+00001A5A  =0000000A                903  LF  EQU $0A
+00001A5A                           904  
+00001A5A= 7C 7C 20 20 20 20 ...    905  WELCOME DC.B    '||      ||  |||||  ||      ||||   ||||   |||  |||  |||||  ', CR, LF
+00001A96= 7C 7C 20 20 20 20 ...    906          DC.B    '||      ||  ||     ||     ||     ||  ||  ||||||||  ||     ', CR, LF
+00001AD2= 7C 7C 20 20 7C 7C ...    907          DC.B    '||  ||  ||  |||||  ||     ||     ||  ||  || || ||  |||||  ', CR, LF
+00001B0E= 7C 7C 20 7C 7C 7C ...    908          DC.B    '|| |||| ||  ||     ||     ||     ||  ||  ||    ||  ||     ', CR, LF
+00001B4A= 7C 7C 7C 7C 20 20 ...    909          DC.B    '||||  ||||  |||||  |||||   ||||   ||||   ||    ||  |||||  ', CR, LF, 0
+00001B87                           910  
+00001B87= 0D 0A 0A                 911  MENU    DC.B    '', CR, LF, LF
+00001B8A= 57 68 61 74 20 77 ...    912          DC.B    'What would you like to do?', CR, LF
+00001BA6= 20 20 31 2E 20 52 ...    913          DC.B    '  1. Read from memory ($00000000 - $FFFFFFFF)', CR, LF
+00001BD5= 20 20 32 2E 20 57 ...    914          DC.B    '  2. Write to memory  ($00010000 - $FFFFFFFF)', CR, LF
+00001C04= 20 20 33 2E 20 52 ...    915          DC.B    '  3. Read from register (D0-D7/A0-A7)', CR, LF
+00001C2B= 20 20 34 2E 20 57 ...    916          DC.B    '  4. Write to register  (D0-D7/A0-A6)', CR, LF
+00001C52= 20 20 35 2E 20 4C ...    917          DC.B    '  5. Load s-record', CR, LF
+00001C66= 20 20 36 2E 20 52 ...    918          DC.B    '  6. Run s-record', CR, LF
+00001C79= 50 6C 65 61 73 65 ...    919          DC.B    'Please type in the number of your choice: ', 0
+00001CA4                           920          
+00001CA4= 49 6E 76 61 6C 69 ...    921  INVALID_CHOICE DC.B    'Invalid choice. Please try again.', CR, LF, LF, 0
+00001CC9                           922  
+00001CC9= 54 79 70 65 20 69 ...    923  OPTION1 DC.B    'Type in the address you wish to read from (00000000-FFFFFFFF) : ', CR, LF, 0
+00001D0C= 54 79 70 65 20 69 ...    924  OPTION2A DC.B   'Type in the address you wish to write to (00010000-FFFFFFFF) : ', CR, LF, 0
+00001D4E= 54 79 70 65 20 69 ...    925  OPTION2B DC.B   'Type in the 8-digit HEX you wish to put into that address (00000000-FFFFFFFF): ', CR, LF, 0
+00001DA0= 54 79 70 65 20 69 ...    926  OPTION3 DC.B    'Type in the register you wish to read from (D0-D7/A0-A7): ', CR, LF, 0
+00001DDD= 54 79 70 65 20 69 ...    927  OPTION4A DC.B   'Type in the register you wish to write to (D0-D7/A0-A6): ', CR, LF, 0
+00001E19= 54 79 70 65 20 69 ...    928  OPTION4B DC.B   'Type in the 8-digit HEX you wish to put into the register (00000000-FFFFFFFF): ', CR, LF, 0
+00001E6B= 54 6F 20 6C 6F 61 ...    929  OPTION5 DC.B    'To load an S-Record, please paste the S-Record here: ', CR, LF, 0
+00001EA3= 52 75 6E 6E 69 6E ...    930  OPTION6 DC.B    'Running S-Record ...', CR, LF, 0
+00001EBA                           931  
+00001EBA= 53 2D 52 65 63 6F ...    932  NO_SREC DC.B    'S-Record not found. Load an S-Record first by choosing 5 in Main Menu.', CR, LF, 0
+00001F03                           933  
+00001F03= 59 6F 75 72 20 65 ...    934  WRITE_DONE DC.B 'Your entry was successful.', CR, LF, 0
+00001F20                           935  
+00001F20= 49 6E 76 61 6C 69 ...    936  IS_NOT_REG DC.B 'Invalid input. Please try another register (D0-D7 or A0-A7): ', CR, LF, 0
+00001F60                           937  
+00001F60= 54 68 65 20 72 65 ...    938  A7_INVALID DC.B  'The register A7 cannot be written to. Please try another register.', CR, LF, LF, 0
+00001FA6                           939  
+00001FA6= 49 6E 76 61 6C 69 ...    940  INVALID_MEM DC.B 'Invalid memory. Please try again with an address within the given range.', CR, LF, LF, 0
+00001FF2                           941  
+00001FF2= 49 6E 76 61 6C 69 ...    942  INVALID_LONG DC.B  'Invalid input. Please type in a longword (00000000-FFFFFFFF).', CR, LF, LF, 0
+00002033                           943  
+00002033= 49 6E 76 61 6C 69 ...    944  INVALID_CHAR DC.B   'Invalid character in input.', CR, LF, LF, 0
+00002052                           945  
+00002052= 49 6E 76 61 6C 69 ...    946  INVALID_SREC DC.B   'Invalid input. Please only type in an S-Record at a time.', CR, LF, LF, 0
+0000208F                           947  
+0000208F= 54 68 65 20 53 2D ...    948  LOAD_DONE DC.B  'The S-Record has been successfully loaded.', CR, LF, LF, 0
+000020BD                           949  
+000020BD= 54 68 65 20 53 2D ...    950  RUN_DONE DC.B   'The S-Record ran successfully.', CR, LF, LF, 0
+000020DF                           951  
+000020DF= 20 4D 45 4D 4F 52 ...    952  MEM_HEADER_ROW  DC.B    ' MEMORY :  CONTENT ', CR, LF
+000020F4= 2D 2D 2D 2D 2D 2D ...    953                  DC.B    '--------  ---------', CR, LF, 0
+0000210A                           954  
+0000210A= 52 45 47 49 53 54 ...    955  REG_HEADER_ROW  DC.B    'REGISTER:  CONTENT ', CR, LF
+0000211F= 2D 2D 2D 2D 2D 2D ...    956                  DC.B    '--------  ---------', CR, LF, 0
+00002135                           957  
+00002135  =00003008                958  INPUT_BUFFER EQU $3008
+00002135  =00003090                959  STRING   EQU $3090
+00002135  =00003100                960  LONGWORD    EQU $3100
+00002135  =00003104                961  ADDRESS    EQU $3104
+00002135  =00003108                962  WORD        EQU $3108
+00002135  =0000310A                963  BYTE        EQU $310A
+00002135  =0000310C                964  REG_NAME    EQU $310C
+00002135  =00003110                965  OUTPUT_BUFFER   EQU $3110
+00002135                           966  
+00002135                           967      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+A7_ERROR            136C
+A7_INVALID          1F60
+ADDRESS             3104
+ASCII_READY         1A4C
+ASCII_TO_HEX        1580
+ASCII_TO_HEX_LOOP   158C
+ASCII_TO_HEX_LOOP1  13B6
+BYTE                310A
+CHECK_LETTER        15AE
+CHECK_LETTER1       13D8
+CR                  D
+DISPLAY_MEM         1752
+DISPLAY_REG         17DA
+DONE_LOADING        1480
+END_CONVERSION      15C2
+END_CONVERSION1     13EC
+END_STRING          1440
+GET_BYTE            15E8
+GET_CHAR_LOOP       1566
+GET_LONGWORD        160E
+GET_REG             1696
+GET_STRING          1558
+GET_STRING2         1428
+GOTO_A0             1948
+GOTO_A1             1954
+GOTO_A2             1960
+GOTO_A3             196C
+GOTO_A4             1978
+GOTO_A5             1984
+GOTO_A6             1990
+GOTO_A7             199C
+GOTO_D0             18E8
+GOTO_D1             18F4
+GOTO_D2             1900
+GOTO_D3             190C
+GOTO_D4             1918
+GOTO_D5             1924
+GOTO_D6             1930
+GOTO_D7             193C
+GREEN               FF00
+HEX_TO_ASCII        19E8
+HEX_TO_ASCII_LOOP   1A1E
+INPUT_BUFFER        3008
+INVALID_CHAR        2033
+INVALID_CHOICE      1CA4
+INVALID_INPUT       1542
+INVALID_LONG        1FF2
+INVALID_MEM         1FA6
+INVALID_SREC        2052
+IS_NOT_REG          1F20
+IS_REG              174C
+LETTER              1A3A
+LF                  A
+LOADSREC            1386
+LOAD_DATA           1474
+LOAD_DONE           208F
+LONGWORD            3100
+MAIN_MENU           102C
+MEM_ERROR           1190
+MEM_HEADER_ROW      20DF
+MENU                1B87
+NEXT_BYTE           17B8
+NEXT_LINE           13A0
+NOT_SREC            14C2
+NO_SREC             1EBA
+OPTION1             1CC9
+OPTION2A            1D0C
+OPTION2B            1D4E
+OPTION3             1DA0
+OPTION4A            1DDD
+OPTION4B            1E19
+OPTION5             1E6B
+OPTION6             1EA3
+OUTPUT_BUFFER       3110
+READMEM             1084
+READREG             11A8
+READREG_OK          19A8
+REG_HEADER_ROW      210A
+REG_NAME            310C
+RETURN              1414
+RUNSREC             14DE
+RUN_DONE            20BD
+SPLIT_BYTE          19FE
+SREC_ERROR          1526
+SREC_MEMORY         4000
+START               1000
+STRING              3090
+SUCCESS             19D2
+TO_HEX              15A6
+TO_HEX1             13D0
+TRY_AGAIN           15CC
+TRY_AGAIN1          13F8
+TYPE0               1488
+TYPE1               1492
+TYPE2               149C
+TYPE8               14A6
+WELCOME             1A5A
+WHITE               FFFFFF
+WORD                3108
+WRITEMEM            10C0
+WRITEREG            11D6
+WRITEREG_OK         1362
+WRITE_DONE          1F03
+WRITE_TO_A0         130E
+WRITE_TO_A1         131A
+WRITE_TO_A2         1326
+WRITE_TO_A3         1332
+WRITE_TO_A4         133E
+WRITE_TO_A5         134A
+WRITE_TO_A6         1356
+WRITE_TO_D0         12AE
+WRITE_TO_D1         12BA
+WRITE_TO_D2         12C6
+WRITE_TO_D3         12D2
+WRITE_TO_D4         12DE
+WRITE_TO_D5         12EA
+WRITE_TO_D6         12F6
+WRITE_TO_D7         1302

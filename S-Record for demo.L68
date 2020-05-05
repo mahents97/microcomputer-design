@@ -1,0 +1,76 @@
+00004000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 4/27/2020 12:03:23 AM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00004000                             7      ORG    $4000
+00004000                             8  START:                  ; first instruction of program
+00004000                             9  
+00004000                            10  * Put program code here       
+00004000                            11  
+00004000  48E7 FFFF                 12          MOVEM.L D0-D7/A0-A7,-(SP)
+00004004                            13              
+00004004  223C 00FFB6C1             14          MOVE.L  #PURPLE,D1
+0000400A  103C 0015                 15          MOVE.B  #21,d0
+0000400E  4E4F                      16          TRAP    #15     
+00004010                            17      
+00004010  43F9 0000402E             18          LEA      MESSAGE,A1
+00004016  103C 000E                 19          MOVE.B   #14,D0
+0000401A  4E4F                      20          TRAP     #15
+0000401C                            21  
+0000401C  223C 00FFFFFF             22          MOVE.L  #WHITE,D1
+00004022  103C 0015                 23          MOVE.B  #21,D0
+00004026  4E4F                      24          TRAP    #15
+00004028                            25          
+00004028  4CDF FFFF                 26          MOVEM.L (SP)+,D0-D7/A0-A7
+0000402C                            27      
+0000402C  4E75                      28          RTS
+0000402E                            29          
+0000402E                            30  *    SIMHALT             ; halt simulator
+0000402E                            31  
+0000402E                            32  * Put variables and constants here
+0000402E                            33  
+0000402E  =0000000D                 34  CR  EQU $0D
+0000402E  =0000000A                 35  LF  EQU $0A
+0000402E                            36  
+0000402E  =0000FFFF                 37  YELLOW  EQU $0000FFFF
+0000402E  =00FFB6C1                 38  PURPLE  EQU $00FFB6C1
+0000402E  =00FFFFFF                 39  WHITE   EQU $00FFFFFF
+0000402E                            40          
+0000402E= 20 20 5F 5F 5F 5F ...     41  MESSAGE DC.B    '  ______________________ ', CR, LF
+00004049= 20 7C 20 20 20 20 ...     42          DC.B    ' |                      |', CR, LF
+00004064= 20 7C 20 20 20 20 ...     43          DC.B    ' |    THANK YOU FOR     |', CR, LF
+0000407F= 20 7C 20 20 41 54 ...     44          DC.B    ' |  ATTENDING MY DEMO!  |', CR, LF
+0000409A= 20 7C 20 20 20 20 ...     45          DC.B    ' |                      |', CR, LF
+000040B5= 20 7C 20 20 20 20 ...     46          DC.B    ' |    ANY QUESTIONS?    |', CR, LF
+000040D0= 20 7C 5F 5F 5F 5F ...     47          DC.B    ' |______________________|', CR, LF
+000040EB= 20 20 20 20 20 20 ...     48          DC.B    '           ||            ', CR, LF 
+00004106= 20 20 2F 5C 5F 5F ...     49          DC.B    '  /\___/\  ||            ', CR, LF
+00004121= 20 2F 20 6F 20 20 ...     50          DC.B    ' / o   o \ ||            ', CR, LF
+0000413C= 28 20 3D 3D 20 5E ...     51          DC.B    '( == ^ == )||            ', CR, LF
+00004157= 20 5C 20 20 20 20 ...     52          DC.B    ' \       / ||            ', CR, LF
+00004172= 20 2F 20 20 20 20 ...     53          DC.B    ' /       \//             ', CR, LF, 0
+0000418E                            54          
+0000418E                            55          
+0000418E                            56  
+0000418E                            57      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+CR                  D
+LF                  A
+MESSAGE             402E
+PURPLE              FFB6C1
+START               4000
+WHITE               FFFFFF
+YELLOW              FFFF
